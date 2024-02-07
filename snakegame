@@ -1,0 +1,148 @@
+import pygame
+import random
+
+# Initialize Pygame
+pygame.init()
+
+# Set up the screen
+screen = pygame.display.set_mode((800, 600))
+pygame.display.set_caption('Snake Game')
+
+# Colors
+WHITE = (255, 255, 255)
+GREEN = (0, 255, 0)
+RED = (255, 0, 0)
+
+# Snake class
+class Snake:
+    def __init__(self):
+        self.body = [[300, 300]]
+        self.direction = 'RIGHT'
+
+    def move(self):
+        head = self.body[-1].copy()
+
+        if self.direction == 'UP':
+            head[1] -= 10
+        elif self.direction == 'DOWN':
+            head[1] += 10
+        elif self.direction == 'LEFT':
+            head[0] -= 10
+        elif self.direction == 'RIGHT':
+            head[0] += 10
+
+        self.body.append(head)
+        self.body.pop(0)
+
+    def grow(self):
+        tail = self.body[0].copy()
+
+        if self.direction == 'UP':
+            tail[1] += 10
+        elif self.direction == 'DOWN':
+            tail[1] -= 10
+        elif self.direction == 'LEFT':
+            tail[0] += 10
+        elif self.direction == 'RIGHT':
+            tail[0] -= 10
+
+        self.body.insert(0, tail)
+
+    def draw(self):
+        for segment in self.body:
+            pygame.draw.rect(screen, GREEN, pygame.Rect(segment[0], segment[1], 10, 10))
+
+# Food class
+class Food:
+    def __init__(self):
+        self.position = [random.randrange(1, 80) * 10, random.randrange(1, 60) * 10]
+        self.is_food_on_screen = True
+
+    def spawn_food(self):
+        if not self.is_food_on_screen:
+            self.position = [random.randrange(1, 80) * 10, random.randrange(1, 60) * 10]
+            self.is_food_on_screen = True
+        return self.position
+
+    def set_food_on_screen(self, choice):
+        self.is_food_on_screen = choice
+
+    def move_food(self):
+        self.position = [random.randrange(1, 80) * 10, random.randrange(1, 60) * 10]
+
+    def draw(self):
+        pygame.draw.rect(screen, RED, pygame.Rect(self.position[0], self.position[1], 10, 10))
+
+# Main function
+def main():
+    game_over = False
+    game_close = False
+
+    snake = Snake()
+    food = Food()
+
+    clock = pygame.time.Clock()
+
+    while not game_over:
+        while game_close:
+            screen.fill(WHITE)
+            font = pygame.font.SysFont(None, 35)
+            text = font.render("You Lost! Press Q-Quit or C-Continue", True, GREEN)
+            screen.blit(text, (250, 250))
+            pygame.display.update()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    game_over = True
+                    game_close = False
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_q:
+                        game_over = True
+                        game_close = False
+                    if event.key == pygame.K_c:
+                        main()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                game_over = True
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT and snake.direction != 'RIGHT':
+                    snake.direction = 'LEFT'
+                if event.key == pygame.K_RIGHT and snake.direction != 'LEFT':
+                    snake.direction = 'RIGHT'
+                if event.key == pygame.K_UP and snake.direction != 'DOWN':
+                    snake.direction = 'UP'
+                if event.key == pygame.K_DOWN and snake.direction != 'UP':
+                    snake.direction = 'DOWN'
+
+        snake.move()
+
+        if snake.body[-1][0] == food.position[0] and snake.body[-1][1] == food.position[1]:
+            food.set_food_on_screen(False)
+            snake.grow()
+            food.move_food()#move the food to new raandom position
+
+        if (
+            snake.body[-1][0] >= 800
+            or snake.body[-1][0] <= 0
+            or snake.body[-1][1] >= 600
+            or snake.body[-1][1] <= 0
+        ):
+            game_close = True
+
+        for block in snake.body[:-1]:
+            if block == snake.body[-1]:
+                game_close = True
+
+        screen.fill(WHITE)
+        snake.draw()
+        food.draw()
+        pygame.display.update()
+
+        clock.tick(5)
+
+    pygame.quit()
+    quit()
+
+if __name__ == "__main__":
+    main()
